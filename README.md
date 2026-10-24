@@ -28,6 +28,16 @@ El primer comando pide la contraseña sin mostrarla (mínimo 12 caracteres). No 
 
 La aplicación se sirve en el puerto 8000 y escucha en la interfaz local de forma predeterminada. Para otro puerto o interfaz, usá `--port` y `--host`. Abrir `index.html` directamente ya no es suficiente: se necesita el servidor para autenticar y guardar.
 
+## Cambiar o restablecer una contraseña
+
+En una terminal dentro de la carpeta del proyecto, ejecutá:
+
+```sh
+python server.py --change-password mi-developer
+```
+
+Reemplazá `mi-developer` por el nombre de la cuenta si es otro. Escribí y repetí la nueva contraseña (mínimo 12 caracteres); no se muestra mientras la escribís. Se conservan los tickets, las cuentas y sus roles. Se cierran las sesiones de esa cuenta para que vuelva a ingresar con la nueva contraseña. En Windows podés usar `py` si `python` no se reconoce. Este restablecimiento requiere acceso a la terminal del servidor y no está disponible desde el navegador.
+
 ## Datos y sesiones
 
 - Catálogo y cuentas en `.data/sandy.sqlite3`, excluido de Git. `SANDY_DATA_DIR` permite usar otra carpeta persistente.
@@ -48,4 +58,4 @@ La suite comprueba lecturas y escrituras reales por HTTP, permisos de cada rol, 
 
 ## Alcance del despliegue
 
-Esta entrega sirve para desarrollo y pruebas del proyecto. Para acceso público, usá un servidor/proxy de producción con HTTPS, limitación de intentos de acceso, almacenamiento persistente y copias de seguridad. Configurá `SANDY_SECURE_COOKIE=1` al servir por HTTPS. No se incluyen recuperación de contraseñas, edición/desactivación de cuentas ni auditoría de cambios. El servidor HTTP de la biblioteca estándar de Python no está pensado para publicación directa en Internet.
+Esta entrega sirve para desarrollo y pruebas del proyecto. Para acceso público, usá un servidor/proxy de producción con HTTPS, limitación de intentos de acceso, almacenamiento persistente y copias de seguridad. Configurá `SANDY_SECURE_COOKIE=1` al servir por HTTPS. No se incluyen recuperación de contraseñas por correo, edición/desactivación de cuentas ni auditoría de cambios. El servidor HTTP de la biblioteca estándar de Python no está pensado para publicación directa en Internet.

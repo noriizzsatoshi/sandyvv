@@ -35,6 +35,18 @@ def create_user(name, password, role):
     with connect() as c:
         c.execute('INSERT INTO users VALUES(?,?,?,?)', (name.strip(), salt, password_hash(password, salt), role))
 
+def change_password(name, password):
+    """Restablecimiento local por la persona con acceso a la máquina del servidor."""
+    if len(password) < 12:
+        raise ValueError('La contraseña debe tener al menos 12 caracteres.')
+    salt = secrets.token_hex(16)
+    with connect() as c:
+        result = c.execute('UPDATE users SET salt=?, password=? WHERE name=?',
+                           (salt, password_hash(password, salt), name))
+        if result.rowcount != 1:
+            raise ValueError('No existe ese usuario. Revisá el nombre y la carpeta del proyecto.')
+        c.execute('DELETE FROM sessions WHERE name=?', (name,))
+
 def validate_catalog(data):
     if not isinstance(data, dict) or not isinstance(data.get('settings'), dict):
         raise ValueError('Catálogo inválido')
@@ -161,12 +173,24 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=8000)
     parser.add_argument('--host', default='127.0.0.1')
-    parser.add_argument('--create-user')
+    accounts = parser.add_mutually_exclusive_group()
+    accounts.add_argument('--create-user')
+    accounts.add_argument('--change-password', metavar='USUARIO')
     parser.add_argument('--role', choices=ROLES, default='usuario')
     args = parser.parse_args()
     if args.create_user:
         create_user(args.create_user, getpass.getpass('Contraseña (mínimo 12 caracteres): '), args.role)
         print('Cuenta creada.')
+    elif args.change_password:
+        try:
+            password = getpass.getpass('Nueva contraseña (mínimo 12 caracteres): ')
+            confirmation = getpass.getpass('Repetí la nueva contraseña: ')
+            if password != confirmation:
+                raise ValueError('Las contraseñas no coinciden. No se cambió nada.')
+            change_password(args.change_password, password)
+        except (ValueError, EOFError) as error:
+            parser.exit(1, f'Error: {error}\n')
+        print('Contraseña actualizada. Volvé a iniciar sesión con la nueva contraseña.')
     else:
         connect().close()
         print(f'Sandy escuchando en {args.host}:{args.port}', flush=True)

@@ -96,6 +96,29 @@ class PermissionsTest(unittest.TestCase):
         self.assertEqual(self.request(self.dev,'/api/logout',{})[0],200)
         self.assertEqual(self.request(self.dev,'/api/catalog')[0],401)
 
+    def test_password_change_revokes_sessions_and_preserves_data_and_role(self):
+        new_password = secrets.token_urlsafe(24)
+        before = self.request(self.dev, '/api/catalog')[1]
+        sandy.change_password('developer', new_password)
+        self.assertEqual(self.request(self.dev, '/api/me')[0], 401)
+        client = self.client()
+        self.assertEqual(self.request(client, '/api/login', {'name': 'developer', 'password': self.password})[0], 401)
+        try:
+            status, user = self.request(client, '/api/login', {'name': 'developer', 'password': new_password})
+            self.assertEqual(status, 200)
+            self.assertEqual(user['role'], 'developer')
+            self.assertEqual(self.request(client, '/api/catalog')[1], before)
+        finally:
+            sandy.change_password('developer', self.password)
+
+    def test_invalid_password_change_leaves_account_and_session_unchanged(self):
+        with self.assertRaises(ValueError):
+            sandy.change_password('developer', 'corta')
+        with self.assertRaises(ValueError):
+            sandy.change_password('no-existe', secrets.token_urlsafe(24))
+        self.assertEqual(self.request(self.dev, '/api/me')[0], 200)
+        self.client('developer')
+
     def test_bad_login_and_invalid_catalog(self):
         self.assertEqual(self.request(self.client(),'/api/login',{'name':'developer','password':'incorrecta'})[0],401)
         self.assertEqual(self.request(self.dev,'/api/catalog',{'data':{},'revision':1})[0],400)
